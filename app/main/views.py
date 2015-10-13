@@ -196,32 +196,46 @@ class shareDatas(Resource):
         if not request.json:
             abort(400)
         else:
-            json = request.json
-            user_t = User.query.filter_by(id=json['id']).first_or_404()
-            if 'temperature' in json:
-                temperature = json['temperature']
-            else:
-                temperature = None
-            if 'humidity' in json:
-                humidity = json['humidity']
-            else:
-                humidity = None
-            if 'uv' in json:
-                uv = json['uv']
-            else:
-                uv = None
-            if 'pressure' in json:
-                pressure = json['pressure']
-            else:
-                pressure = None
-            new_data = ShareData(
-                time=json['time'], longitude=json['longitude'],
-                latitude=json['latitude'], user=user_t,
-                temperature=temperature, humidity=humidity,
-                uv=uv, pressure=pressure)
-            db.session.add(new_data)
+            user = User.query.filter_by(id = request.json['id']).first_or_404()
+            setting = UserSetting.query.filter_by(id = request.json['id']).first_or_404()
+
+            time = request.json['time']
+            longitude = request.json['longitude']
+            latitude=request.json['latitude']
+            temperature = None
+            humidity = None
+            uv = None
+            pressure = None
+            badLevel = 0
+
+            if 'temperature' in request.json:
+                temperature = request.json['temperature']
+                if float(temperature) > float(setting.temperature_upper) or float(temperature) < float(setting.temperature_lower):
+                    badLevel += 1
+            if 'humidity' in request.json:
+                humidity = request.json['humidity']
+                if float(humidity) > float(setting.humidity_upper) or float(humidity) < float(setting.humidity_lower):
+                    badLevel += 1
+            if 'uv' in request.json:
+                uv = request.json['uv']
+                if float(uv) > float(setting.uv_upper) or float(uv) < float(setting.uv_lower):
+                    badLevel += 1
+            if 'pressure' in request.json:
+                pressure = request.json['pressure']
+                if float(pressure) > float(setting.pressure_upper) or float(pressure) < float(setting.pressure_lower):
+                    badLevel += 1
+            # if nothing is upload
+            if temperature is None and humidity is None and uv is None and pressure is None:
+                abort(400)
+
+            newData = ShareData(
+                time = time, longitude = longitude, latitude = latitude,
+                user = user, badLevel = badLevel, temperature = temperature,
+                humidity = humidity,uv = uv, pressure = pressure)
+
+            db.session.add(newData)
             db.session.commit()
-            return {'devicedata': json}, 201
+            return {'status': 'ok'}
 
 
 class deviceDatas(Resource):
@@ -617,11 +631,13 @@ def get_alarm():
     content = response.read()[1:-1]#remove the [] in string
     return jsonify({"data": content})
 
+
 @main.route('/v1/token', methods=['GET'])
 @auth.login_required
 def get_auth_token():
     token = g.user.generate_auth_token()
     return jsonify({ 'token': token.decode('ascii') })
+
 
 @main.route('/v1/login', methods=['GET'])
 @auth.login_required
@@ -640,6 +656,7 @@ def verify_password(username_or_token, password):
             return False
     g.user = user
     return True
+
 
 @main.route('/v1/initData', methods=['GET'])
 def initData():

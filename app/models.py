@@ -74,8 +74,8 @@ class UserSetting(db.Model):
         'User', backref=db.backref('settings', lazy='dynamic'))
 
     def __init__(self, user, temperature_upper = 24, temperature_lower = 18,
-    	humidity_upper = 65, humidity_lower = 45, uv_upper = 400, uv_lower = 315,
-    	pressure_upper = 1030, pressure_lower = 1010):
+    	humidity_upper = 65, humidity_lower = 45, uv_upper = 100, uv_lower = 0,
+    	pressure_upper = 1030, pressure_lower = 1000):
         self.temperature_upper = temperature_upper
         self.temperature_lower = temperature_lower
         self.humidity_upper = humidity_upper
@@ -163,6 +163,7 @@ class ShareData(db.Model):
     humidity = db.Column(db.String(100))
     uv = db.Column(db.String(100))  # Ultraviolet rays
     pressure = db.Column(db.String(100))
+    badLevel = db.Column(db.Integer, nullable=False)
 
     userId = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -171,8 +172,8 @@ class ShareData(db.Model):
 
     def __init__(
             self, time, longitude, latitude, user,
-            temperature=None, humidity=None,
-            uv=None, pressure=None):
+            badLevel, temperature = None, humidity = None,
+            uv = None, pressure = None):
         self.time = time
         self.longitude = longitude
         self.latitude = latitude
@@ -180,6 +181,7 @@ class ShareData(db.Model):
         self.humidity = humidity
         self.uv = uv
         self.pressure = pressure
+        self.badLevel = badLevel
         self.user = user
 
     def __repr__(self):
