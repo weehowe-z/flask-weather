@@ -6,8 +6,9 @@ from flask.ext.script import Manager, Shell, Server
 #from instance.config import *
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'production')
-#db.drop_all(app=app)
-#db.create_all(app=app)
+db.drop_all(app = app)
+db.create_all(app = app)
+
 
 manager = Manager(app)
 
@@ -17,7 +18,7 @@ def make_shell_context():
 
 
 manager.add_command("shell", Shell(make_context=make_shell_context))
-manager.add_command("runserver",Server(host="0.0.0.0",port=5000))
+manager.add_command("runserver",Server(host="127.0.0.1",port=5000))
 
 @manager.command
 def deploy():

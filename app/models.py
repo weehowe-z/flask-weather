@@ -57,8 +57,34 @@ class User(db.Model):
         user = User.query.get(data['id'])
         return user
 
-    def __repr__(self):
-        return '<User %r>' % self.username
+class UserSetting(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    temperature_upper = db.Column(db.String(100))
+    temperature_lower = db.Column(db.String(100))
+    humidity_upper = db.Column(db.String(100))
+    humidity_lower = db.Column(db.String(100))
+    uv_upper = db.Column(db.String(100))
+    uv_lower = db.Column(db.String(100))
+    pressure_upper = db.Column(db.String(100))
+    pressure_lower = db.Column(db.String(100))
+
+    userId = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship(
+        'User', backref=db.backref('devices', lazy='dynamic'))
+
+    def __init__(self, temperature_upper, temperature_lower,
+    	humidity_upper, humidity_lower, uv_upper, uv_lower,
+    	pressure_upper, pressure_lower, user):
+        self.temperature_upper = temperature_upper
+        self.temperature_lower = temperature_lower
+        self.humidity_upper = humidity_upper
+        self.humidity_lower = humidity_lower
+        self.uv_upper = uv_upper
+        self.uv_lower = uv_lower
+        self.pressure_upper = pressure_upper
+        self.pressure_lower = pressure_lower
+        self.user = user
+
 
 
 class Friendships(db.Model):
