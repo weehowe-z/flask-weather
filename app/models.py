@@ -57,6 +57,7 @@ class User(db.Model):
         user = User.query.get(data['id'])
         return user
 
+
 class UserSetting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     temperature_upper = db.Column(db.String(100))
@@ -70,11 +71,11 @@ class UserSetting(db.Model):
 
     userId = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship(
-        'User', backref=db.backref('devices', lazy='dynamic'))
+        'User', backref=db.backref('settings', lazy='dynamic'))
 
-    def __init__(self, temperature_upper, temperature_lower,
-    	humidity_upper, humidity_lower, uv_upper, uv_lower,
-    	pressure_upper, pressure_lower, user):
+    def __init__(self, user, temperature_upper = 24, temperature_lower = 18,
+    	humidity_upper = 65, humidity_lower = 45, uv_upper = 400, uv_lower = 315,
+    	pressure_upper = 1030, pressure_lower = 1010):
         self.temperature_upper = temperature_upper
         self.temperature_lower = temperature_lower
         self.humidity_upper = humidity_upper
@@ -84,7 +85,6 @@ class UserSetting(db.Model):
         self.pressure_upper = pressure_upper
         self.pressure_lower = pressure_lower
         self.user = user
-
 
 
 class Friendships(db.Model):
@@ -243,6 +243,7 @@ class TenDayForecastData(db.Model):
         self.weather = weather
         self.weatherpic = weatherpic
 
+
 class WarningData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
@@ -258,6 +259,7 @@ class WarningData(db.Model):
         self.type = type
         self.level = level
         self.content = content
+
 
 class AQIData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -278,6 +280,7 @@ class AQIData(db.Model):
         self.pripoll = pripoll
         self.content = content
         self.measure = measure
+
 
 class StationData(db.Model):
     id = db.Column(db.Integer, primary_key=True)

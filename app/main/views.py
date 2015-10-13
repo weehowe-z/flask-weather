@@ -423,7 +423,45 @@ class devices(Resource):
         return {"status": "ok"}, 200
 
 
+class userSetting(Resource):
+
+    def get(self, id):
+        setting = UserSetting.query.filter_by(userId=id).first_or_404()
+        dic = {}
+        dic['temperature_upper'] = setting.temperature_upper
+        dic['temperature_lower']  = setting.temperature_lower
+        dic['humidity_upper']  = setting.humidity_upper
+        dic['humidity_lower']  = setting.humidity_lower
+        dic['uv_upper']  = setting.uv_upper
+        dic['uv_lower']  = setting.uv_lower
+        dic['pressure_upper']  = setting.pressure_upper
+        dic['pressure_lower'] = setting.pressure_lower
+        return {"setting": dic}
+
+    def put(self, id):
+        setting = UserSetting.query.filter_by(userId=id).first_or_404()
+        if 'temperature_upper' in request.json:
+            setting.temperature_upper = request.json['temperature_upper']
+        if 'temperature_lower' in request.json:
+            setting.temperature_lower = request.json['temperature_lower']
+        if 'humidity_upper' in request.json:
+            setting.humidity_upper = request.json['humidity_upper']
+        if 'humidity_lower' in request.json:
+            setting.humidity_lower = request.json['humidity_lower']
+        if 'uv_upper' in request.json:
+            setting.uv_upper = request.json['uv_upper']
+        if 'uv_lower' in request.json:
+            setting.uv_lower = request.json['uv_lower']
+        if 'pressure_upper' in request.json:
+            setting.pressure_upper = request.json['pressure_upper']
+        if 'pressure_lower' in request.json:
+            setting.pressure_lower = request.json['pressure_lower']
+        db.session.commit()
+        return {"status": "ok"}
+
+
 class user(Resource):
+
     def get(self, id):
         user = User.query.filter_by(id=id).first_or_404()
         return {"User": userToJson(user)}, 200
@@ -447,7 +485,9 @@ class users(Resource):
             newUser = User(
                 username, password, email, name,
                 birthday, province, district, sex)
+            newUserSetting = UserSetting(newUser)
             db.session.add(newUser)
+            db.session.add(newUserSetting)
             db.session.commit()
             userId = newUser.id
             return {
