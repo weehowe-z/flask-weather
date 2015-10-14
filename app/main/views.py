@@ -344,23 +344,37 @@ class deviceDatas(Resource):
         if not request.json:
             abort(400)
         else:
-            json = request.json
-            user_t = User.query.filter_by(id=json['id']).first_or_404()
-            device_t = Device.query.filter_by(
-                macId=json['macId']).first_or_404()
-            new_data = DeviceData(
-                time=json['time'],
-                longitude=json['longitude'],
-                latitude=json['latitude'],
-                temperature=json['temperature'],
-                humidity=json['humidity'],
-                uv=json['uv'],
-                pressure=json['pressure'],
-                user=user_t,
-                device=device_t)
-            db.session.add(new_data)
+            user = User.query.filter_by(id = request.json['id']).first_or_404()
+            setting = UserSetting.query.filter_by(id = request.json['id']).first_or_404()
+            device = Device.query.filter_by(macId = request.json['macId']).first_or_404()
+            
+            time = request.json['time']
+            longitude = request.json['longitude']
+            latitude = request.json['latitude']
+            temperature = request.json['temperature']
+            humidity = request.json['humidity']
+            uv = request.json['uv']
+            pressure = request.json['pressure']
+            badLevel = 0
+
+            if float(temperature) > float(setting.temperature_upper) or float(temperature) < float(setting.temperature_lower):
+                badLevel += 1
+            if float(humidity) > float(setting.humidity_upper) or float(humidity) < float(setting.humidity_lower):
+                badLevel += 1
+            if float(uv) > float(setting.uv_upper) or float(uv) < float(setting.uv_lower):
+                badLevel += 1
+            if float(pressure) > float(setting.pressure_upper) or float(pressure) < float(setting.pressure_lower):
+                badLevel += 1
+
+            newData = DeviceData(
+                time = time, longitude = longitude, latitude = latitude,
+                temperature = temperature,humidity = humidity,
+                uv = uv, pressure = pressure, badLevel = badLevel,
+                user = user, device = device)
+
+            db.session.add(newData)
             db.session.commit()
-            return {'status':  'success'}, 201
+            return {'status':  'ok'}, 201
 
 
 class friend(Resource):
@@ -669,6 +683,11 @@ class environment(Resource):
                 ShareData.time >= todayTimeStr,
                 ShareData.time <= currentTimeStr
             ).order_by(ShareData.time).all()
+            dataList2 = user.datas.filter(
+                DeviceData.time >= todayTimeStr,
+                DeviceData.time <= currentTimeStr
+            ).order_by(DeviceData.time).all()
+            dataList.extend(dataList2)
             totalHour, levelData = getAverageLevel15min(dataList, currentTime)
             return {"totalHour": totalHour, "levelData": levelData}
 
@@ -684,10 +703,17 @@ class environment(Resource):
                 lib = {}
                 timeStr = time.strftime("%Y-%m-%d")
                 timeStr2 = (time + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+                if i == 6:#the last day of it
+                    timeStr2 = currentTimeStr
                 dataList = user.sharedatas.filter(
                     ShareData.time >= timeStr,
                     ShareData.time <= timeStr2
                 ).order_by(ShareData.time).all()
+                dataList2 = user.datas.filter(
+                    DeviceData.time >= timeStr,
+                    DeviceData.time <= timeStr2
+                ).order_by(DeviceData.time).all()
+                dataList.extend(dataList2)
                 lib['time'] = timeStr
                 lib['totalTime'] = getAverageLevel15min(dataList, time)[0]
                 time += datetime.timedelta(days=1)
@@ -762,12 +788,13 @@ def initData():
     humidity = randomValue(1000,0,40)
     uv = randomValue(1000,0,500)
     pressure = randomValue(1000,0,500)
+    level = randomLevel(1000)
 
     for i in range(0,50):
-        data.append(DeviceData(date[i],longitude[i],latitude[i],temperature[i],humidity[i],uv[i],pressure[i],people[i],device[i]))
+        data.append(DeviceData(date[i],longitude[i],latitude[i],temperature[i],humidity[i],uv[i],pressure[i],level[i],people[i],device[i]))
     for i in range(50,1000):
         x= random.randint(0,49)
-        data.append(DeviceData(date[i],longitude[i],latitude[i],temperature[i],humidity[i],uv[i],pressure[i],people[x],device[x]))
+        data.append(DeviceData(date[i],longitude[i],latitude[i],temperature[i],humidity[i],uv[i],pressure[i],level[i],people[x],device[x]))
     
     obData = []
     area = randomArea(1000)
@@ -797,7 +824,7 @@ def initData():
     for i in range(0,50):
         shareData.append(ShareData(date[i],longitude[i],latitude[i],people[i],level[i],temperature[i],humidity[i],uv[i],pressure[i]))
     for i in range(50,1000):
-        x= random.randint(0,10)
+        x= random.randint(0,40)
         shareData.append(ShareData(date[i],longitude[i],latitude[i],people[x],level[i],temperature[i],humidity[i],uv[i],pressure[i]))    
 
 

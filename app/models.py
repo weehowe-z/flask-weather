@@ -127,6 +127,7 @@ class DeviceData(db.Model):
     humidity = db.Column(db.String(100), nullable=False)
     uv = db.Column(db.String(100), nullable=False)  # Ultraviolet rays
     pressure = db.Column(db.String(100), nullable=False)
+    badLevel = db.Column(db.Integer, nullable=False)
 
     userId = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     deviceID = db.Column(
@@ -138,7 +139,7 @@ class DeviceData(db.Model):
 
     def __init__(
             self, time, longitude, latitude, temperature,
-            humidity, uv, pressure, user, device):
+            humidity, uv, pressure, badLevel, user, device):
         self.time = time
         self.longitude = longitude
         self.latitude = latitude
@@ -146,11 +147,9 @@ class DeviceData(db.Model):
         self.humidity = humidity
         self.uv = uv
         self.pressure = pressure
+        self.badLevel = badLevel
         self.user = user
         self.device = device
-
-    def __repr__(self):
-        return '<DeviceData %r>' % self.id
 
 
 class ShareData(db.Model):
