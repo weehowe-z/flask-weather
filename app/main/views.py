@@ -155,7 +155,6 @@ def getAverageLevel15min(list, systime):
     level = []
     totalTime = 0
     nowTime = datetime.datetime.strptime(systime.strftime("%Y-%m-%d"), '%Y-%m-%d')
-    #currentTime = time.hour * 60 + time.minute
     for i in range(0,24*4):
         level.append(-1)
 
@@ -798,7 +797,7 @@ def initData():
     for i in range(0,50):
         shareData.append(ShareData(date[i],longitude[i],latitude[i],people[i],level[i],temperature[i],humidity[i],uv[i],pressure[i]))
     for i in range(50,1000):
-        x= random.randint(0,49)
+        x= random.randint(0,10)
         shareData.append(ShareData(date[i],longitude[i],latitude[i],people[x],level[i],temperature[i],humidity[i],uv[i],pressure[i]))    
 
 
