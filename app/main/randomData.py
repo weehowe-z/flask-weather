@@ -87,7 +87,7 @@ def randomDate(num):
 		# this may be out of range if with 2/30 2/31
 		year = 2015
 		month = 10
-		day = random.randint(7,9)
+		day = random.randint(14,15)
 		hour = random.randint(0,23)
 		minute = random.randint(0,59)
 		second = random.randint(0,59)
@@ -203,3 +203,8 @@ def randomSunTime(num):
 		
 	return sunrise,sunset,uploadTime
 
+def randomLevel(num):
+	level=[]
+	for i in range (0,num):
+		level.append(random.randint(0,4))
+	return level

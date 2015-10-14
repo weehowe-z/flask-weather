@@ -150,6 +150,38 @@ def getAverageUV24hours(list, time1, time2):
     return result
 
 
+def getAverageLevel15min(list, systime):
+    result = []
+    level = []
+    totalTime = 0
+    nowTime = datetime.datetime.strptime(systime.strftime("%Y-%m-%d"), '%Y-%m-%d')
+    #currentTime = time.hour * 60 + time.minute
+    for i in range(0,24*4):
+        level.append(-1)
+
+    for i in range(0, len(list)):
+        data = list[i]
+        time = data.time.hour * 60 + data.time.minute
+        slot = time/15
+        if data.badLevel>level[slot]:
+            level[slot] = data.badLevel
+
+    prevLevel = 0
+    for i in range(0,24*4):
+        lib = {}
+        lib['time'] =  nowTime.strftime("%Y-%m-%d %H:%M")
+        if level[i] == -1:
+            lib['level'] = prevLevel
+        else:
+            lib['level'] = level[i]
+            prevLevel = level[i]
+        if lib['level'] == 4:
+            totalTime += 15
+        result.append(lib)
+        nowTime += datetime.timedelta(seconds=900)
+    return totalTime/60,result
+
+
 class ObDatas(Resource):
 
     def get(self):
@@ -624,6 +656,47 @@ class publicDatas(Resource):
             abort(400)
 
 
+class environment(Resource):
+
+    def get(self,id):
+        if not request.args or 'type' not in request.args:
+            abort(404)
+        if request.args['type'] == 'today':
+            user = User.query.filter_by(id=id).first_or_404()
+            currentTime = datetime.datetime.now()
+            currentTimeStr = currentTime.strftime("%Y-%m-%d %H:%M:%S")
+            todayTimeStr = currentTime.strftime("%Y-%m-%d 00:00:00")
+            dataList = user.sharedatas.filter(
+                ShareData.time >= todayTimeStr,
+                ShareData.time <= currentTimeStr
+            ).order_by(ShareData.time).all()
+            totalHour, levelData = getAverageLevel15min(dataList, currentTime)
+            return {"totalHour": totalHour, "levelData": levelData}
+
+        elif request.args['type'] == 'week':
+            user = User.query.filter_by(id=id).first_or_404()
+            currentTime = datetime.datetime.now()
+            currentTimeStr = currentTime.strftime("%Y-%m-%d %H:%M:%S")
+            priorTime = (currentTime + datetime.timedelta(days=1)).date() - datetime.timedelta(days=7)
+            priorTimeStr = priorTime.strftime("%Y-%m-%d 00:00:00")
+            time = datetime.datetime.strptime(priorTimeStr, '%Y-%m-%d %H:%M:%S')
+            result = []
+            for i in range (0,7):
+                lib = {}
+                timeStr = time.strftime("%Y-%m-%d")
+                timeStr2 = (time + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+                dataList = user.sharedatas.filter(
+                    ShareData.time >= timeStr,
+                    ShareData.time <= timeStr2
+                ).order_by(ShareData.time).all()
+                lib['time'] = timeStr
+                lib['totalTime'] = getAverageLevel15min(dataList, time)[0]
+                time += datetime.timedelta(days=1)
+                result.append(lib)
+            return {"status": result}
+        else:
+            abort(400)
+
 @main.route('/v1/weather/alarm',methods=['GET'])
 def get_alarm():
     url = 'http://61.152.122.112:8080/publicdata/data?appid=bFLKk0uV7IZvzcBoWJ1j&appkey=mXwnhDkYIG6S9iOyqsAW7vPVQ5ZxBe&type=warning_city'
@@ -708,10 +781,29 @@ def initData():
     pressure = randomValue(1000,0,500)
     sunrise,sunset,uploadTime = randomSunTime(1000)
 
-    print "start commit"
     for i in range(0,1000):
         obData.append(ObservatoryData(area[i],temperature[i],weather[i],aqi[i],humidity[i],windspeed[i],winddirect[i],pressure[i],sunrise[i],sunset[i],uploadTime[i]))
 
+
+    shareData = []
+    date = randomDate(1000)
+    longitude = randomValue(1000,0,0.01)
+    latitude = randomValue(1000,0,0.01)
+    temperature = randomValue(1000,0,40)
+    humidity = randomValue(1000,0,40)
+    uv = randomValue(1000,0,500)
+    pressure = randomValue(1000,0,500)
+    level = randomLevel(1000)
+
+    for i in range(0,50):
+        shareData.append(ShareData(date[i],longitude[i],latitude[i],people[i],level[i],temperature[i],humidity[i],uv[i],pressure[i]))
+    for i in range(50,1000):
+        x= random.randint(0,49)
+        shareData.append(ShareData(date[i],longitude[i],latitude[i],people[x],level[i],temperature[i],humidity[i],uv[i],pressure[i]))    
+
+
+
+    print "start commit"
 
     x=Friendships(1,2)
     y=Friendships(1,3)
@@ -733,6 +825,10 @@ def initData():
 
     for i in range(0,1000):
         db.session.add(obData[i])
+        db.session.commit()
+
+    for i in range(0,1000):
+        db.session.add(shareData[i])
         db.session.commit()
 
     return jsonify({ 'status': 'ok' })
